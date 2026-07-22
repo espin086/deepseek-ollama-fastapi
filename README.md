@@ -1,12 +1,18 @@
 # deepseek-ollama-fastapi
-A Docker-based solution for running the Deep Seek LLM via Ollama, exposed by a FastAPI application using Uvicorn. This repo includes straightforward endpoints for both synchronous and streaming text-generation requests, making it easy to integrate the “deepseek-r1” model into your own applications.
 
+A Dockerized inference-serving layer: FastAPI/Uvicorn in front of Ollama running DeepSeek-R1, in a single container. Two endpoints cover the two ways a client needs a generation. synchronous (wait for the full response) and streaming (token-by-token over an open connection).
 
-### ✨ Benefits
-- 🚀 **All-in-One**: Runs FastAPI + Ollama in a **single container**.
-- ⚡ **Quick Deploy**: Just build and run—no complicated setup.
-- 🎯 **LLM Ready**: Uses the Deep Seek `deepseek-r1:1.5b` model by default for text generation.
-- 🏗 **Easy to Extend**: Add new endpoints or swap models with minimal changes.
+**Why streaming matters here:** a chat UI that waits for a full generation before showing anything reads as broken. The streaming endpoint keeps the HTTP connection open and flushes tokens as Ollama produces them, so the client can render output as it arrives instead of blocking on the slowest part of the request.
+
+**Why one container instead of two services:** for a single-model deployment, running FastAPI and Ollama in the same container removes a network hop between them and simplifies the deploy surface to one image and one port mapping. It trades horizontal scalability of the two components independently for operational simplicity. the right tradeoff at this scale, wrong one past it.
+
+**Relevant to:** inference-serving architecture, latency-sensitive API design (sync vs. streaming), containerized MLOps deployment.
+
+### Benefits
+- **All-in-One**: Runs FastAPI + Ollama in a single container.
+- **Quick Deploy**: Build and run, no separate service orchestration needed.
+- **LLM Ready**: Uses the DeepSeek `deepseek-r1:1.5b` model by default for text generation.
+- **Easy to Extend**: Add new endpoints or swap models with minimal changes.
 
 ---
 
@@ -53,4 +59,3 @@ curl -X POST http://localhost:8000/generate/stream \
      -d '{"prompt":"Stream me some AI wisdom!", "stream":true}'
 
 ```
-
